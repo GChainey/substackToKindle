@@ -12,7 +12,8 @@ import requests
 from bs4 import BeautifulSoup
 
 BATCH_SIZE = 50
-DELAY_BETWEEN_REQUESTS = 1
+DELAY_BETWEEN_REQUESTS = 1.5
+MAX_RETRIES = 3
 
 HEADERS = {
     "User-Agent": (
@@ -40,32 +41,49 @@ class SubstackClient:
 
     def fetch_all_post_metadata(self) -> List[dict]:
         all_posts = []
+        for batch in self.fetch_post_metadata_batches():
+            all_posts.extend(batch)
+        return all_posts
+
+    def _get_with_retry(self, url: str, timeout: int = 30) -> requests.Response:
+        """GET with exponential backoff on 429 rate limits."""
+        for attempt in range(MAX_RETRIES):
+            resp = self.session.get(url, timeout=timeout)
+            if resp.status_code == 429:
+                wait = 2 ** (attempt + 1)  # 2s, 4s, 8s
+                time.sleep(wait)
+                continue
+            resp.raise_for_status()
+            return resp
+        # Final attempt — let it raise
+        resp = self.session.get(url, timeout=timeout)
+        resp.raise_for_status()
+        return resp
+
+    def fetch_post_metadata_batches(self):
+        """Yield batches of post metadata as they're fetched from the API."""
         offset = 0
         while True:
             url = (
                 f"{self.base_url}/api/v1/archive"
                 f"?sort=new&search=&offset={offset}&limit={BATCH_SIZE}"
             )
-            resp = self.session.get(url, timeout=30)
-            resp.raise_for_status()
+            resp = self._get_with_retry(url)
             posts = resp.json()
             if not posts:
                 break
-            all_posts.extend(posts)
+            yield posts
             offset += len(posts)
             time.sleep(DELAY_BETWEEN_REQUESTS)
-        return all_posts
 
     def fetch_post_html(self, slug: str) -> str:
         url = f"{self.base_url}/p/{slug}"
-        resp = self.session.get(url, timeout=30)
-        resp.raise_for_status()
+        resp = self._get_with_retry(url)
         return resp.text
 
     def download_image(self, img_url: str) -> Tuple[Optional[bytes], Optional[str], Optional[str]]:
         try:
-            resp = self.session.get(img_url, timeout=15)
-            resp.raise_for_status()
+            resp = self._get_with_retry(img_url, timeout=15)
             content_type = (
                 resp.headers.get("Content-Type", "image/jpeg").split(";")[0].strip()
             )

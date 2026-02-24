@@ -2,6 +2,9 @@
 
 import { useState, useMemo } from "react";
 import { PostMetadata } from "@/lib/types";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import PostRow from "./PostRow";
 
 interface PostListProps {
@@ -10,6 +13,7 @@ interface PostListProps {
   onToggle: (slug: string) => void;
   onSelectAll: () => void;
   onDeselectAll: () => void;
+  maxHeight?: string;
 }
 
 export default function PostList({
@@ -18,6 +22,7 @@ export default function PostList({
   onToggle,
   onSelectAll,
   onDeselectAll,
+  maxHeight = "60vh",
 }: PostListProps) {
   const [search, setSearch] = useState("");
 
@@ -35,38 +40,39 @@ export default function PostList({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="text-sm text-gray-500">
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-sm text-muted-foreground">
           {selectedSlugs.size} of {posts.length} selected
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={allSelected ? onDeselectAll : onSelectAll}
-            className="text-sm text-orange-600 hover:text-orange-700 font-medium"
-          >
-            {allSelected ? "Deselect all" : "Select all"}
-          </button>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={allSelected ? onDeselectAll : onSelectAll}
+          className="text-orange-600 hover:text-orange-700"
+        >
+          {allSelected ? "Deselect all" : "Select all"}
+        </Button>
       </div>
 
-      <input
-        type="text"
+      <Input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Filter posts..."
-        className="w-full px-3 py-2 mb-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+        className="mb-3"
       />
 
-      <div className="space-y-1 max-h-[60vh] overflow-y-auto">
-        {filtered.map((post) => (
-          <PostRow
-            key={post.slug}
-            post={post}
-            selected={selectedSlugs.has(post.slug)}
-            onToggle={onToggle}
-          />
-        ))}
-      </div>
+      <ScrollArea style={{ height: maxHeight }}>
+        <div className="space-y-1 pr-3">
+          {filtered.map((post) => (
+            <PostRow
+              key={post.slug}
+              post={post}
+              selected={selectedSlugs.has(post.slug)}
+              onToggle={onToggle}
+            />
+          ))}
+        </div>
+      </ScrollArea>
     </div>
   );
 }

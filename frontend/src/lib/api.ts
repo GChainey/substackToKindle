@@ -57,3 +57,7 @@ export function getJobStreamUrl(jobId: string): string {
 export function getJobDownloadUrl(jobId: string): string {
   return `${API_BASE}/jobs/${jobId}/download`;
 }
+
+export function getPostsStreamUrl(subdomain: string): string {
+  return `${API_BASE}/newsletter/${subdomain}/posts/stream`;
+}

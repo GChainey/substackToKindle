@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseSubstackUrl } from "@/lib/parseSubstackUrl";
 import { checkSubdomain } from "@/lib/api";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function SubstackUrlInput() {
   const [url, setUrl] = useState("");
@@ -36,7 +38,7 @@ export default function SubstackUrlInput() {
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-xl mx-auto">
       <div className="flex gap-3">
-        <input
+        <Input
           type="text"
           value={url}
           onChange={(e) => {
@@ -45,17 +47,17 @@ export default function SubstackUrlInput() {
           }}
           placeholder="samkriss.substack.com"
           disabled={checking}
-          className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-lg disabled:opacity-50"
+          className="h-12 text-lg"
         />
-        <button
+        <Button
           type="submit"
           disabled={checking}
-          className="px-6 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 disabled:opacity-50 transition-colors"
+          className="h-12 px-6 bg-orange-500 hover:bg-orange-600"
         >
           {checking ? "Checking..." : "Go"}
-        </button>
+        </Button>
       </div>
-      {error && <p className="mt-2 text-red-500 text-sm">{error}</p>}
+      {error && <p className="mt-2 text-destructive text-sm">{error}</p>}
     </form>
   );
 }

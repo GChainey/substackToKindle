@@ -1,6 +1,8 @@
 "use client";
 
 import { JobStatus } from "@/lib/types";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface CompletedPost {
   slug: string;
@@ -31,9 +33,8 @@ export default function JobProgress({
 
   return (
     <div className="space-y-4">
-      {/* Progress bar */}
       <div>
-        <div className="flex justify-between text-sm text-gray-600 mb-1">
+        <div className="flex justify-between text-sm text-muted-foreground mb-2">
           <span>
             {status === "completed"
               ? "Done!"
@@ -47,39 +48,28 @@ export default function JobProgress({
             {progress}/{total}
           </span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
-          <div
-            className={`h-3 rounded-full transition-all duration-300 ${
-              status === "failed"
-                ? "bg-red-500"
-                : status === "completed"
-                ? "bg-green-500"
-                : "bg-orange-500"
-            }`}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
+        <Progress value={pct} className="h-2" />
       </div>
 
-      {/* Error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-sm text-destructive">
           {error}
         </div>
       )}
 
-      {/* Completed posts log */}
       {completedPosts.length > 0 && (
-        <div className="max-h-48 overflow-y-auto text-sm space-y-1">
-          {completedPosts.map((p) => (
-            <div key={p.slug} className="flex justify-between text-gray-600">
-              <span className="truncate">{p.title}</span>
-              <span className="text-gray-400 ml-2 shrink-0">
-                {p.images} img{p.images !== 1 ? "s" : ""}
-              </span>
-            </div>
-          ))}
-        </div>
+        <ScrollArea className="h-48">
+          <div className="space-y-1 pr-3">
+            {completedPosts.map((p) => (
+              <div key={p.slug} className="flex justify-between text-sm py-1">
+                <span className="truncate text-foreground">{p.title}</span>
+                <span className="text-muted-foreground ml-2 shrink-0 text-xs">
+                  {p.images} img{p.images !== 1 ? "s" : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
       )}
     </div>
   );
