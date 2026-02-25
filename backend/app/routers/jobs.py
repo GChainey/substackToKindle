@@ -5,8 +5,15 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException
 from fastapi.responses import FileResponse
 from sse_starlette.sse import EventSourceResponse
 
-from app.models.schemas import JobCreateRequest, JobCreateResponse, JobStatusResponse
+from app.models.schemas import (
+    JobCreateRequest,
+    JobCreateResponse,
+    JobStatusResponse,
+    SendToKindleRequest,
+    SendToKindleResponse,
+)
 from app.services.job_manager import job_manager
+from app.services.email_sender import is_configured as email_is_configured, send_to_kindle
 
 router = APIRouter()
 
@@ -71,3 +78,26 @@ async def download_job(job_id: str):
         media_type="application/zip",
         filename=f"{job.subdomain}_epubs.zip",
     )
+
+
+@router.get("/email/status")
+async def email_status():
+    return {"configured": email_is_configured()}
+
+
+@router.post("/jobs/{job_id}/send-to-kindle", response_model=SendToKindleResponse)
+async def send_job_to_kindle(job_id: str, req: SendToKindleRequest):
+    if not email_is_configured():
+        raise HTTPException(status_code=503, detail="Email service not configured")
+
+    job = job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if not job.epub_paths:
+        raise HTTPException(status_code=400, detail="No EPUBs available")
+
+    try:
+        await asyncio.to_thread(send_to_kindle, req.kindle_email, job.epub_paths, job.subdomain)
+        return SendToKindleResponse(success=True, message=f"Sent {len(job.epub_paths)} EPUB(s) to {req.kindle_email}")
+    except Exception as e:
+        return SendToKindleResponse(success=False, message="Failed to send", error=str(e))

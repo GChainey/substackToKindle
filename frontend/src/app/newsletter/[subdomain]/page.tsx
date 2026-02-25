@@ -1,18 +1,24 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { PostMetadata } from "@/lib/types";
-import { createJob, getPostsStreamUrl } from "@/lib/api";
+import { createJob, getPostsStreamUrl, getEmailStatus } from "@/lib/api";
 import { useJob } from "@/hooks/useJob";
+import { useDeliveryHistory } from "@/hooks/useDeliveryHistory";
 import { useVariant } from "@/components/VariantSwitcher";
 import PostList from "@/components/PostList";
 import CookieInput from "@/components/CookieInput";
 import JobProgress from "@/components/JobProgress";
 import DownloadButton from "@/components/DownloadButton";
+import KindleEmailInput from "@/components/KindleEmailInput";
+import SendToKindleButton from "@/components/SendToKindleButton";
 import CheckoutSidebar from "@/components/CheckoutSidebar";
+import DeliveryHistory from "@/components/DeliveryHistory";
+import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { AlertTriangle } from "lucide-react";
 
 export default function NewsletterPage() {
   const params = useParams<{ subdomain: string }>();
@@ -28,8 +34,40 @@ export default function NewsletterPage() {
   const [cookie, setCookie] = useState("");
   const [jobId, setJobId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [emailConfigured, setEmailConfigured] = useState(false);
+  const [kindleEmail, setKindleEmail] = useState("");
 
   const job = useJob();
+  const { records: historyRecords, addRecord, clearHistory } = useDeliveryHistory(subdomain);
+
+  useEffect(() => {
+    getEmailStatus().then((s) => setEmailConfigured(s.configured));
+  }, []);
+
+  const recordKindleSent = useCallback(() => {
+    if (!jobId) return;
+    const selectedPosts = posts.filter((p) => selectedSlugs.has(p.slug));
+    addRecord({
+      subdomain,
+      postCount: selectedPosts.length,
+      postTitles: selectedPosts.map((p) => p.title),
+      method: "kindle",
+      kindleEmail,
+      jobId,
+    });
+  }, [jobId, posts, selectedSlugs, subdomain, kindleEmail, addRecord]);
+
+  const recordDownload = useCallback(() => {
+    if (!jobId) return;
+    const selectedPosts = posts.filter((p) => selectedSlugs.has(p.slug));
+    addRecord({
+      subdomain,
+      postCount: selectedPosts.length,
+      postTitles: selectedPosts.map((p) => p.title),
+      method: "download",
+      jobId,
+    });
+  }, [jobId, posts, selectedSlugs, subdomain, addRecord]);
 
   useEffect(() => {
     const url = getPostsStreamUrl(subdomain);
@@ -186,6 +224,16 @@ export default function NewsletterPage() {
               jobError={job.error}
               jobCompletedPosts={job.completedPosts}
               onStartOver={handleStartOver}
+              onDownload={recordDownload}
+              onKindleSent={recordKindleSent}
+              emailConfigured={emailConfigured}
+              kindleEmail={kindleEmail}
+              onKindleEmailChange={setKindleEmail}
+            />
+            <DeliveryHistory
+              records={historyRecords}
+              onClear={clearHistory}
+              showSubdomain={false}
             />
           </div>
         </div>
@@ -224,7 +272,14 @@ export default function NewsletterPage() {
               error={job.error}
               completedPosts={job.completedPosts}
             />
-            {job.status === "completed" && <DownloadButton jobId={jobId} />}
+            {job.status === "completed" && <DownloadButton jobId={jobId} onDownload={recordDownload} />}
+            {job.status === "completed" && emailConfigured && (
+              <>
+                <Separator />
+                <KindleEmailInput value={kindleEmail} onChange={setKindleEmail} />
+                <SendToKindleButton jobId={jobId} kindleEmail={kindleEmail} onSent={recordKindleSent} />
+              </>
+            )}
             {(job.status === "completed" || job.status === "failed") && (
               <Button variant="ghost" size="sm" onClick={handleStartOver}>
                 Start over
@@ -232,12 +287,31 @@ export default function NewsletterPage() {
             )}
           </div>
         )}
+
+        <DeliveryHistory
+          records={historyRecords}
+          onClear={clearHistory}
+          showSubdomain={false}
+        />
       </div>
 
       {/* Sticky footer */}
       {!jobId && posts.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-background border-t shadow-lg">
           <div className="max-w-3xl mx-auto px-4 py-4 space-y-3">
+            {(() => {
+              const paidCount = posts.filter(
+                (p) => selectedSlugs.has(p.slug) && p.audience === "only_paid"
+              ).length;
+              return paidCount > 0 && !cookie ? (
+                <div className="flex gap-2 p-2 rounded-md bg-amber-50 border border-amber-200 text-sm text-amber-800">
+                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+                  <span>
+                    {paidCount} paid post{paidCount !== 1 ? "s" : ""} selected without a session cookie.
+                  </span>
+                </div>
+              ) : null;
+            })()}
             <CookieInput value={cookie} onChange={setCookie} />
             <Button
               onClick={handleGenerate}

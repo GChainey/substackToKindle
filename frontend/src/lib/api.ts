@@ -61,3 +61,29 @@ export function getJobDownloadUrl(jobId: string): string {
 export function getPostsStreamUrl(subdomain: string): string {
   return `${API_BASE}/newsletter/${subdomain}/posts/stream`;
 }
+
+export async function getEmailStatus(): Promise<{ configured: boolean }> {
+  try {
+    const res = await fetch(`${API_BASE}/email/status`);
+    if (!res.ok) return { configured: false };
+    return res.json();
+  } catch {
+    return { configured: false };
+  }
+}
+
+export async function sendToKindle(
+  jobId: string,
+  kindleEmail: string
+): Promise<{ success: boolean; message: string; error?: string }> {
+  const res = await fetch(`${API_BASE}/jobs/${jobId}/send-to-kindle`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ kindle_email: kindleEmail }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || `Failed to send to Kindle (${res.status})`);
+  }
+  return res.json();
+}

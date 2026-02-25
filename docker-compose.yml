@@ -8,11 +8,13 @@ services:
       - ./backend:/app
     environment:
       - PYTHONUNBUFFERED=1
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - FROM_EMAIL=${FROM_EMAIL:-kindle@resend.dev}
 
   frontend:
     build: ./frontend
     ports:
-      - "3000:3000"
+      - "4000:4000"
     volumes:
       - ./frontend:/app
       - /app/node_modules

@@ -23,3 +23,14 @@ export interface JobStatusResponse {
   current_post: string | null;
   error: string | null;
 }
+
+export interface DeliveryRecord {
+  id: string;
+  timestamp: string;
+  subdomain: string;
+  postCount: number;
+  postTitles: string[];
+  method: "download" | "kindle";
+  kindleEmail?: string;
+  jobId: string;
+}

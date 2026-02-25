@@ -40,6 +40,7 @@ class Job:
     error: Optional[str] = None
     output_dir: Optional[str] = None
     zip_path: Optional[str] = None
+    epub_paths: List[str] = field(default_factory=list)
     created_at: float = field(default_factory=time.time)
     sse_queues: List[asyncio.Queue] = field(default_factory=list)
 
@@ -151,6 +152,7 @@ class JobManager:
             # Create ZIP
             job.progress = job.total
             job.current_post = None
+            job.epub_paths = epub_files
             if epub_files:
                 zip_base = os.path.join(job.output_dir, f"{job.subdomain}_epubs")
                 job.zip_path = shutil.make_archive(zip_base, "zip", job.output_dir)

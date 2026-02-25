@@ -3,6 +3,7 @@
 import { PostMetadata } from "@/lib/types";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Lock } from "lucide-react";
 
 interface PostRowProps {
   post: PostMetadata;
@@ -20,11 +21,17 @@ function isRealSubtitle(subtitle: string | null): subtitle is string {
 }
 
 export default function PostRow({ post, selected, onToggle }: PostRowProps) {
+  const isPaid = post.audience === "only_paid";
+
   return (
     <label
       className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors border ${
+        isPaid ? "border-l-2 border-l-amber-400" : ""
+      } ${
         selected
-          ? "bg-orange-50 border-orange-200"
+          ? isPaid
+            ? "bg-amber-50 border-amber-200"
+            : "bg-orange-50 border-orange-200"
           : "hover:bg-accent border-transparent"
       }`}
     >
@@ -34,7 +41,10 @@ export default function PostRow({ post, selected, onToggle }: PostRowProps) {
         className="mt-0.5"
       />
       <div className="flex-1 min-w-0">
-        <div className="font-medium text-foreground leading-snug">{post.title}</div>
+        <div className="font-medium text-foreground leading-snug flex items-center gap-1.5">
+          {isPaid && <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+          {post.title}
+        </div>
         {isRealSubtitle(post.subtitle) && (
           <div className="text-sm text-muted-foreground truncate mt-0.5">
             {post.subtitle}
@@ -44,8 +54,8 @@ export default function PostRow({ post, selected, onToggle }: PostRowProps) {
           {post.date && (
             <span className="text-xs text-muted-foreground">{post.date}</span>
           )}
-          {post.audience === "only_paid" && (
-            <Badge variant="outline" className="text-amber-600 border-amber-300 text-[10px] px-1.5 py-0">
+          {isPaid && (
+            <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 text-[10px] px-1.5 py-0">
               Paid
             </Badge>
           )}

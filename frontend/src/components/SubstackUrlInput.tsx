@@ -58,6 +58,18 @@ export default function SubstackUrlInput() {
         </Button>
       </div>
       {error && <p className="mt-2 text-destructive text-sm">{error}</p>}
+      <div className="flex flex-wrap gap-2 mt-3 justify-center">
+        {["astralcodexten", "samkriss", "slow-boring", "platformer", "thezvi"].map((name) => (
+          <button
+            key={name}
+            type="button"
+            onClick={() => { setUrl(name); setError(""); }}
+            className="px-3 py-1 text-sm rounded-full bg-muted hover:bg-muted/80 text-muted-foreground transition-colors"
+          >
+            {name}
+          </button>
+        ))}
+      </div>
     </form>
   );
 }

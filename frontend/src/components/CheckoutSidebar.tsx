@@ -5,9 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { PostMetadata } from "@/lib/types";
+import { AlertTriangle } from "lucide-react";
 import CookieInput from "./CookieInput";
 import JobProgress from "./JobProgress";
 import DownloadButton from "./DownloadButton";
+import KindleEmailInput from "./KindleEmailInput";
+import SendToKindleButton from "./SendToKindleButton";
 import { JobStatus } from "@/lib/types";
 
 interface CompletedPost {
@@ -34,6 +37,11 @@ interface CheckoutSidebarProps {
   jobError: string | null;
   jobCompletedPosts: CompletedPost[];
   onStartOver: () => void;
+  onDownload?: () => void;
+  onKindleSent?: () => void;
+  emailConfigured?: boolean;
+  kindleEmail: string;
+  onKindleEmailChange: (v: string) => void;
 }
 
 export default function CheckoutSidebar({
@@ -53,6 +61,11 @@ export default function CheckoutSidebar({
   jobError,
   jobCompletedPosts,
   onStartOver,
+  onDownload,
+  onKindleSent,
+  emailConfigured,
+  kindleEmail,
+  onKindleEmailChange,
 }: CheckoutSidebarProps) {
   const selectedPosts = posts.filter((p) => selectedSlugs.has(p.slug));
   const paidCount = selectedPosts.filter((p) => p.audience === "only_paid").length;
@@ -78,9 +91,18 @@ export default function CheckoutSidebar({
           {paidCount > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Paid posts</span>
-              <Badge variant="outline" className="text-amber-600 border-amber-300">
+              <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">
                 {paidCount}
               </Badge>
+            </div>
+          )}
+
+          {paidCount > 0 && !cookie && (
+            <div className="flex gap-2 p-3 rounded-md bg-amber-50 border border-amber-200 text-sm text-amber-800">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+              <span>
+                You have {paidCount} paid post{paidCount !== 1 ? "s" : ""} selected. Without a session cookie, only free content will be fetched.
+              </span>
             </div>
           )}
 
@@ -114,7 +136,14 @@ export default function CheckoutSidebar({
                 error={jobError}
                 completedPosts={jobCompletedPosts}
               />
-              {jobStatus === "completed" && <DownloadButton jobId={jobId} />}
+              {jobStatus === "completed" && <DownloadButton jobId={jobId} onDownload={onDownload} />}
+              {jobStatus === "completed" && emailConfigured && (
+                <>
+                  <Separator />
+                  <KindleEmailInput value={kindleEmail} onChange={onKindleEmailChange} />
+                  <SendToKindleButton jobId={jobId} kindleEmail={kindleEmail} onSent={onKindleSent} />
+                </>
+              )}
               {(jobStatus === "completed" || jobStatus === "failed") && (
                 <Button variant="ghost" size="sm" onClick={onStartOver} className="w-full">
                   Start over

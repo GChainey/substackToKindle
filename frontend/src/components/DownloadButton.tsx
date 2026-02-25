@@ -6,12 +6,13 @@ import { getJobDownloadUrl } from "@/lib/api";
 
 interface DownloadButtonProps {
   jobId: string;
+  onDownload?: () => void;
 }
 
-export default function DownloadButton({ jobId }: DownloadButtonProps) {
+export default function DownloadButton({ jobId, onDownload }: DownloadButtonProps) {
   return (
     <Button asChild size="lg" className="bg-green-600 hover:bg-green-700">
-      <a href={getJobDownloadUrl(jobId)} download>
+      <a href={getJobDownloadUrl(jobId)} download onClick={onDownload}>
         <Download className="w-4 h-4 mr-2" />
         Download EPUBs (ZIP)
       </a>

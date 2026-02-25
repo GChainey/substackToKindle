@@ -49,3 +49,13 @@ class JobStatusResponse(BaseModel):
 class SSEEvent(BaseModel):
     event: str
     data: dict
+
+
+class SendToKindleRequest(BaseModel):
+    kindle_email: str
+
+
+class SendToKindleResponse(BaseModel):
+    success: bool
+    message: str
+    error: Optional[str] = None
